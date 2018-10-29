@@ -78,7 +78,8 @@ Function Magic-Put([STRING] $File, [STRING] $Destination, [int] $PieceSize = 10M
             $Crypto.Key = $EncryptionKey
             $FileStreamWriter = New-Object System.IO.FileStream($path, [System.IO.FileMode]::Create);
             $Crypto.GenerateIV()
-            $FileStreamWriter.Write([System.BitConverter]::GetBytes($Crypto.IV.Length), 0, 4);
+            $FileStreamWriter.Write([System.BitConverter]::GetBytes($Crypto.IV.Length), 0, 4)
+            $FileStreamWriter.Write($Crypto.IV, 0, $Crypto.IV.Length)
             $Transform = $Crypto.CreateEncryptor();
             $CryptoStream = New-Object System.Security.Cryptography.CryptoStream($FileStreamWriter, $Transform, [System.Security.Cryptography.CryptoStreamMode]::Write);    
             $CryptoStream.Write($BUFFER, 0, $BYTESREAD);
@@ -130,7 +131,7 @@ Function Magic-Put([STRING] $File, [STRING] $Destination, [int] $PieceSize = 10M
 Function Magic-Get([STRING] $File, [STRING] $Destination, [STRING] $Key){
     $ErrorActionPreference = "Stop"
 	$Parts = @();
-    $i = 01;;
+    $i = 01;
     $PartPath = $File + $i.ToString("00") + ".AES";
     while(Test-Path $PartPath){
         $Parts+=$PartPath;
@@ -149,11 +150,11 @@ Function Magic-Get([STRING] $File, [STRING] $Destination, [STRING] $Key){
     $Key2 = $Key | ConvertTo-SecureString -AsPlainText -Force;
     $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Key2);
     $EncryptionKey = [System.Convert]::FromBase64String([System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR));
+    $FileStreamWriter = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Create);
+    $isFirst=$true;
     $Crypto = [System.Security.Cryptography.SymmetricAlgorithm]::Create("AES");
     $Crypto.KeySize = $EncryptionKey.Length*8;
     $Crypto.Key = $EncryptionKey;
-    $FileStreamWriter = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Create);
-    $isFirst=$true;
 	if ($PSVersionTable.PSVersion.Major -ge 3){ # method CopyTo() is implemented in .Net 4.x first
 		$Parts | foreach {
 			"Appending $_ to $Path.";
@@ -192,7 +193,7 @@ Function Magic-Get([STRING] $File, [STRING] $Destination, [STRING] $Key){
             $Crypto.IV = $IV;
             $Transform = $Crypto.CreateDecryptor();
             $CryptoStream = New-Object System.Security.Cryptography.CryptoStream($FileStreamWriter, $Transform, [System.Security.Cryptography.CryptoStreamMode]::Write);
-	  	    while ($FileStreamReader.BaseStream.Position -lt $FileStreamReader.BaseStream.Length){
+	  	    while ($FileStreamReader.Position -lt $FileStreamReader.Length){
 	    	    $BYTESREAD = $FileStreamReader.Read($BUFFER, 0, $BUFFER.Length);
 	    	    $CryptoStream.Write($BUFFER, 0, $BYTESREAD);
 	  	    }
