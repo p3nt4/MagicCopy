@@ -3,6 +3,7 @@ Powershell script to exfiltrate large files quickly and securely.
 
 Files are split into multiple pieces and encrypted using AES. Multithreading is supported for increased copy speed. 
 
+
 ### Magic-Put
 
 Store file to a remote or local location.
