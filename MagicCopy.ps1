@@ -1,81 +1,14 @@
-function New-CryptographyKey()
-{
-<#
-.SYNOPSIS 
-Generates a random cryptography key.
-
-.DESCRIPTION
-Generates a random cryptography key based on the desired key size.
-
-.PARAMETER Algorithm
-Algorithm to generate key for.
-
-.PARAMETER KeySize
-Number of bits the generated key will have.
-
-.PARAMETER AsPlainText
-Returns a String instead of SecureString.
-
-.OUTPUTS
-System.Security.SecureString. New-CryptographyKey return the key as a SecureString by default.
-System.String. New-CryptographyKey will return the key in plain text as a string if the -AsPlainText parameter is specified.
-
-.EXAMPLE
-$key = New-CryptographyKey
-This example generates a random 256-bit AES key and stores it in the variable $key.
-
-.NOTES
-Author: Tyler Siegrist
-Date: 9/22/2017
-#>
-[CmdletBinding()]
-[OutputType([System.Security.SecureString])]
-[OutputType([String], ParameterSetName='PlainText')]
-Param(
-    [Parameter(Mandatory=$false, Position=1)]
-    [ValidateSet('AES','DES','RC2','Rijndael','TripleDES')]
-    [String]$Algorithm='AES',
-    [Parameter(Mandatory=$false, Position=2)]
-    [Int]$KeySize,
-    [Parameter(ParameterSetName='PlainText')]
-    [Switch]$AsPlainText
-)
-    Process
-    {
-        try
-        {
-            $Crypto = [System.Security.Cryptography.SymmetricAlgorithm]::Create($Algorithm)
-            if($PSBoundParameters.ContainsKey('KeySize')){
-                $Crypto.KeySize = $KeySize
-            }
-            $Crypto.GenerateKey()
-            if($AsPlainText)
-            {
-                return [System.Convert]::ToBase64String($Crypto.Key)
-            }
-            else
-            {
-                return [System.Convert]::ToBase64String($Crypto.Key) | ConvertTo-SecureString -AsPlainText -Force
-            }
-        }
-        catch
-        {
-            Write-Error $_
-        }
-        
-    }
+Function generateKey($KeySeed){
+    return  New-object System.Security.Cryptography.SHA256Managed | ForEach-Object {$_.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($KeySeed))};
 }
 
 Function Magic-Put([STRING] $File, [STRING] $Destination, [int] $PieceSize = 10MB, [STRING] $Key, [int] $FirstPiece = 1, [int] $LastPiece = 10MB, [int] $Threads = 1){
     [ScriptBlock] $ScriptBlock = {
         param([Byte[]]$BUFFER,[String]$path,[String]$Key,[int]$BYTESREAD)
         try{
-            $Key2 = $Key | ConvertTo-SecureString -AsPlainText -Force;
-            $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Key2)
-            $EncryptionKey = [System.Convert]::FromBase64String([System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR))
             $Crypto = [System.Security.Cryptography.SymmetricAlgorithm]::Create('AES')
-            $Crypto.KeySize = $EncryptionKey.Length*8
-            $Crypto.Key = $EncryptionKey
+            $Crypto.KeySize = 256
+            $Crypto.Key = generateKey($Key) 
             $FileStreamWriter = New-Object System.IO.FileStream($path, [System.IO.FileMode]::Create);
             $Crypto.GenerateIV()
             $FileStreamWriter.Write([System.BitConverter]::GetBytes($Crypto.IV.Length), 0, 4)
@@ -147,14 +80,11 @@ Function Magic-Get([STRING] $File, [STRING] $Destination, [STRING] $Key){
 	    Write-Error "No parts found.";
 		return;
 	}
-    $Key2 = $Key | ConvertTo-SecureString -AsPlainText -Force;
-    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Key2);
-    $EncryptionKey = [System.Convert]::FromBase64String([System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR));
     $FileStreamWriter = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Create);
     $isFirst=$true;
     $Crypto = [System.Security.Cryptography.SymmetricAlgorithm]::Create("AES");
-    $Crypto.KeySize = $EncryptionKey.Length*8;
-    $Crypto.Key = $EncryptionKey;
+    $Crypto.KeySize = 256
+    $Crypto.Key = generateKey($Key)
 	if ($PSVersionTable.PSVersion.Major -ge 3){ # method CopyTo() is implemented in .Net 4.x first
 		$Parts | foreach {
 			"Appending $_ to $Path.";
