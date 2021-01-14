@@ -9,13 +9,13 @@ Files are split into multiple pieces and encrypted using AES. Multithreading is 
 Store file to a remote or local location.
 
 ```
-Magic-Put -PieceSize 10MB -File 'C:\MYBIGFILE.DATA' -Destination 'O:\' -Key "rJm0PP2KBhDoq87Q+hVqjwJt+NWguCRY1oLgRHmcSwY="  -Threads 20 
+Magic-Put -PieceSize 10MB -File 'C:\MYBIGFILE.DATA' -Destination 'O:\' -Key "Password"  -Threads 20 
 ```
 
 Recover lost pieces:
 
 ```
-Magic-Put -PieceSize 10MB -File 'C:\MYBIGFILE.DATA' -Destination 'O:\' -Key "rJm0PP2KBhDoq87Q+hVqjwJt+NWguCRY1oLgRHmcSwY="  -FirstPiece 20 -LastPiece 25 
+Magic-Put -PieceSize 10MB -File 'C:\MYBIGFILE.DATA' -Destination 'O:\' -Key "Password"  -FirstPiece 20 -LastPiece 25 
 ```
 
 ### Magic-Get
@@ -23,13 +23,7 @@ Magic-Put -PieceSize 10MB -File 'C:\MYBIGFILE.DATA' -Destination 'O:\' -Key "rJm
 Recover file:
 
 ```
-Magic-Get  -File 'O:\MYBIGFILE.DATA' -Destination 'C:\' -Key "rJm0PP2KBhDoq87Q+hVqjwJt+NWguCRY1oLgRHmcSwY="
-```
-
-### Generating Key
-
-```
-New-CryptographyKey -AsPlainText
+Magic-Get  -File 'O:\MYBIGFILE.DATA' -Destination 'C:\' -Key "Password"
 ```
 
 
