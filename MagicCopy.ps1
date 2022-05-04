@@ -1,14 +1,10 @@
-Function generateKey($KeySeed){
-    return  New-object System.Security.Cryptography.SHA256Managed | ForEach-Object {$_.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($KeySeed))};
-}
-
 Function Magic-Put([STRING] $File, [STRING] $Destination, [int] $PieceSize = 10MB, [STRING] $Key, [int] $FirstPiece = 1, [int] $LastPiece = 10MB, [int] $Threads = 1){
     [ScriptBlock] $ScriptBlock = {
         param([Byte[]]$BUFFER,[String]$path,[String]$Key,[int]$BYTESREAD)
         try{
             $Crypto = [System.Security.Cryptography.SymmetricAlgorithm]::Create('AES')
             $Crypto.KeySize = 256
-            $Crypto.Key = generateKey($Key) 
+            $Crypto.Key = New-object System.Security.Cryptography.SHA256Managed | ForEach-Object {$_.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Key))};
             $FileStreamWriter = New-Object System.IO.FileStream($path, [System.IO.FileMode]::Create);
             $Crypto.GenerateIV()
             $FileStreamWriter.Write([System.BitConverter]::GetBytes($Crypto.IV.Length), 0, 4)
@@ -17,7 +13,8 @@ Function Magic-Put([STRING] $File, [STRING] $Destination, [int] $PieceSize = 10M
             $CryptoStream = New-Object System.Security.Cryptography.CryptoStream($FileStreamWriter, $Transform, [System.Security.Cryptography.CryptoStreamMode]::Write);    
             $CryptoStream.Write($BUFFER, 0, $BYTESREAD);
             $CryptoStream.FlushFinalBlock();
-        }Finally{
+        }catch{}
+        Finally{
             if($FileStreamWriter){$FileStreamWriter.Close()};
             if($CryptoStream){$CryptoStream.Close()};
         }
@@ -84,7 +81,7 @@ Function Magic-Get([STRING] $File, [STRING] $Destination, [STRING] $Key){
     $isFirst=$true;
     $Crypto = [System.Security.Cryptography.SymmetricAlgorithm]::Create("AES");
     $Crypto.KeySize = 256
-    $Crypto.Key = generateKey($Key)
+    $Crypto.Key = New-object System.Security.Cryptography.SHA256Managed | ForEach-Object {$_.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Key))};
 	if ($PSVersionTable.PSVersion.Major -ge 3){ # method CopyTo() is implemented in .Net 4.x first
 		$Parts | foreach {
 			"Appending $_ to $Path.";
